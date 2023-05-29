@@ -212,7 +212,7 @@ class CascadeGaussianSmoothing(nn.Module):
 
         # The gaussian kernel is the product of the gaussian function of each dimension.
         kernels = []
-        meshgrids = torch.meshgrid([torch.arange(size, dtype=torch.float32) for size in kernel_size])
+        meshgrids = torch.meshgrid([torch.arange(size, dtype=torch.float32) for size in kernel_size], indexing='ij')
         for sigma in sigmas:
             kernel = torch.ones_like(meshgrids[0])
             for size_1d, std_1d, grid in zip(kernel_size, sigma, meshgrids):

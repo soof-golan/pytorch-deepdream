@@ -14,7 +14,7 @@ class Vgg16(torch.nn.Module):
         super().__init__()
 
         if pretrained_weights == SupportedPretrainedWeights.IMAGENET.name:
-            vgg16 = models.vgg16(pretrained=True, progress=show_progress).eval()
+            vgg16 = models.vgg16(progress=show_progress, weights=models.VGG16_Weights.IMAGENET1K_V1).eval()
         else:
             raise Exception(f'Pretrained weights {pretrained_weights} not yet supported for {self.__class__.__name__} model.')
 
@@ -67,7 +67,7 @@ class Vgg16Experimental(torch.nn.Module):
         super().__init__()
 
         if pretrained_weights == SupportedPretrainedWeights.IMAGENET.name:
-            vgg16 = models.vgg16(pretrained=True, progress=show_progress).eval()
+            vgg16 = models.vgg16(progress=show_progress, weights=models.VGG16_Weights.IMAGENET1K_V1).eval()
         else:
             raise Exception(f'Pretrained weights {pretrained_weights} not yet supported for {self.__class__.__name__} model.')
 
