@@ -18,4 +18,4 @@ run_deepdream() {
 export -f run_deepdream
 
 # Use find to get all the subdirectories under wider/images and run the above function in parallel
-find wider/images -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | parallel -j "$N" run_deepdream
+find wider/images -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | parallel --verbose -j "$N" run_deepdream
