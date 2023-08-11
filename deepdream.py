@@ -9,12 +9,12 @@ import os
 import argparse
 import shutil
 import time
-
+from pathlib import Path
 
 import numpy as np
 import torch
 import cv2 as cv
-
+from tqdm import tqdm
 
 import utils.utils as utils
 from utils.constants import *
@@ -65,7 +65,7 @@ def gradient_ascent(config, model, input_tensor, layer_ids_to_use, iteration):
     input_tensor.data = torch.max(torch.min(input_tensor, UPPER_IMAGE_BOUND), LOWER_IMAGE_BOUND)
 
 
-def deep_dream_static_image(config, img):
+def deep_dream_static_image(config, img_path: str):
     model = utils.fetch_and_prepare_model(config['model_name'], config['pretrained_weights'], DEVICE)
     try:
         layer_ids_to_use = [model.layer_names.index(layer_name) for layer_name in config['layers_to_use']]
@@ -74,14 +74,8 @@ def deep_dream_static_image(config, img):
         print(f'Available layers for model {config["model_name"]} are {model.layer_names}.')
         return
 
-    if img is None:  # load either the provided image or start from a pure noise image
-        img_path = utils.parse_input_file(config['input'])
-        # load a numpy, [0, 1] range, channel-last, RGB image
-        img = utils.load_image(img_path, target_shape=config['img_width'])
-        if config['use_noise']:
-            shape = img.shape
-            img = np.random.uniform(low=0.0, high=1.0, size=shape).astype(np.float32)
 
+    img = utils.load_image(img_path, target_shape=config['img_width'])
     img = utils.pre_process_numpy_img(img)
     base_shape = img.shape[:-1]  # save initial height and width
 
@@ -182,7 +176,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # Common params
-    parser.add_argument("--input", type=str, help="Input IMAGE or VIDEO name that will be used for dreaming", default='figures.jpg')
+    parser.add_argument("--input", type=str, help="Input IMAGE or VIDEO or Directory name that will be used for dreaming", default='figures.jpg')
     parser.add_argument("--img_width", type=int, help="Resize input image to this width", default=600)
     parser.add_argument("--layers_to_use", type=str, nargs='+', help="Layer whose activations we should maximize while dreaming", default=['relu4_3'])
     parser.add_argument("--model_name", choices=[m.name for m in SupportedModels],
@@ -223,15 +217,30 @@ if __name__ == "__main__":
     config['input_name'] = os.path.basename(config['input'])
 
     # Create Ouroboros video (feeding neural network's output to it's input)
-    if config['create_ouroboros']:
-        deep_dream_video_ouroboros(config)
+    # if config['create_ouroboros']:
+    #     deep_dream_video_ouroboros(config)
 
     # Create a blended DeepDream video
-    elif any([config['input_name'].lower().endswith(video_ext) for video_ext in SUPPORTED_VIDEO_FORMATS]):  # only support mp4 atm
-        deep_dream_video(config)
+    # elif any([config['input_name'].lower().endswith(video_ext) for video_ext in SUPPORTED_VIDEO_FORMATS]):  # only support mp4 atm
+    #     deep_dream_video(config)
 
-    else:  # Create a static DeepDream image
-        print('Dreaming started!')
-        img = deep_dream_static_image(config, img=None)  # img=None -> will be loaded inside of deep_dream_static_image
+    # else:  # Create a static DeepDream image
+    # print('Dreaming started!')
+    input_path = Path(config['input'])
+    if not input_path.is_dir():
+        raise ValueError(f'Input path {input_path} is not a directory!')
+
+    images = [
+        path
+        for path in input_path.iterdir()
+        if any([path.name.lower().endswith(ext) for ext in SUPPORTED_IMAGE_FORMATS])
+    ]
+
+    for image_path in tqdm(images):
+        img = deep_dream_static_image(config, img_path=str(image_path.absolute()))
         dump_path = utils.save_and_maybe_display_image(config, img)
         print(f'Saved DeepDream static image to: {os.path.relpath(dump_path)}\n')
+
+    # img = deep_dream_static_image(config, img=None)  # img=None -> will be loaded inside of deep_dream_static_image
+    # dump_path = utils.save_and_maybe_display_image(config, img)
+    # print(f'Saved DeepDream static image to: {os.path.relpath(dump_path)}\n')
