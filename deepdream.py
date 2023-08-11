@@ -238,7 +238,8 @@ if __name__ == "__main__":
 
     for image_path in tqdm(images):
         img = deep_dream_static_image(config, img_path=str(image_path.absolute()))
-        dump_path = utils.save_and_maybe_display_image(config, img)
+        image_name = image_path.name
+        dump_path = utils.save_and_maybe_display_image(config, img, image_name=image_name)
         print(f'Saved DeepDream static image to: {os.path.relpath(dump_path)}\n')
 
     # img = deep_dream_static_image(config, img=None)  # img=None -> will be loaded inside of deep_dream_static_image
